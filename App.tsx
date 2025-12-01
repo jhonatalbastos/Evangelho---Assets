@@ -3,7 +3,7 @@ import { LiturgyData, Roteiro, VisualStyle, VoiceOption, IntroStyle, ProcessingS
 import * as gasService from './services/gasService';
 import * as geminiService from './services/geminiService';
 import * as liturgyService from './services/liturgyService';
-import * as utils from './utils';
+import * as utils from './utils'; // Importa todas as funções de utils
 import BlockCard from './components/BlockCard';
 import { logger } from './services/logger';
 import { LogEntry } from './services/logger'; // Import LogEntry type
@@ -1081,7 +1081,7 @@ with tab4:
     })();
 
     with col_batch_1:
-        if st.button("🔊 Gerar Todos os Áudios", use_container_width=true, disabled=is_job_loaded):
+        if (st.button("🔊 Gerar Todos os Áudios", use_container_width=true, disabled=is_job_loaded)) {
             with st.status("Gerando áudios em lote...", expanded=true) as status:
                 const total = len(blocos_config);
                 let count = 0;
@@ -1107,7 +1107,7 @@ with tab4:
                 status.update(label=f"Concluído! {count}/{total} áudios gerados.", state="complete");
                 st.rerun();
     with col_batch_2:
-        if st.button("✨ Gerar Todas as Imagens", use_container_width=true, disabled=is_job_loaded):
+        if (st.button("✨ Gerar Todas as Imagens", use_container_width=true, disabled=is_job_loaded)) {
             with st.status("Gerando imagens em lote...", expanded=true) as status:
                 const total = len(blocos_config);
                 let count = 0;
@@ -1670,8 +1670,20 @@ const App: React.FC = () => {
 
         // Audio
         try {
-          const audioB64 = await geminiService.generateSpeech(block.data.text, voice);
-          assets.push({ block_id: block.id, type: 'audio', data_b64: audioB64 });
+          const audioB64_pcm = await geminiService.generateSpeech(block.data.text, voice);
+          
+          // ADICIONAR ESTA VALIDAÇÃO
+          if (!audioB64_pcm || audioB64_pcm.length < 100) {
+              throw new Error(`Audio generated for ${block.id} is seemingly empty or invalid.`);
+          }
+
+          // Convert raw PCM Base64 to WAV Base64
+          const pcmBytes = utils.decode(audioB64_pcm);
+          // Sample rate, channels, bit depth are fixed for gemini-2.5-flash-preview-tts
+          const wavBytes = utils.pcmToWav(pcmBytes, 24000, 1, 16); 
+          const audioB64_wav = utils.encode(wavBytes);
+
+          assets.push({ block_id: block.id, type: 'audio', data_b64: audioB64_wav });
           completedAssetCount++;
         } catch (e: any) {
             logger.error(`Failed to generate audio for block: ${block.id}`, e, { text: block.data.text.substring(0, 100) });

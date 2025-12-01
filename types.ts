@@ -5,7 +5,7 @@ declare global {
     webkitAudioContext?: typeof AudioContext; // Make it optional as it's a fallback
     // Removed 'readonly' modifier to resolve "All declarations of 'aistudio' must have identical modifiers" error.
     // This aligns the declaration with other (possibly implicit) declarations that do not include this modifier.
-    aistudio: AIStudio; // Declare aistudio property
+    var aistudio: AIStudio; // Declare aistudio property
   }
 }
 
